@@ -82,8 +82,8 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Watermark Pill Anti-Terpotong */
-    .watermark {
+    /* Footer Pill: Watermark + Mini Admin Trigger */
+    .bottom-bar-pill {
       position: fixed;
       bottom: 12px;
       right: 14px;
@@ -91,18 +91,20 @@
       font-weight: 600;
       padding: 4px 10px;
       border-radius: 9999px;
-      background: rgba(255, 255, 255, 0.78);
+      background: rgba(255, 255, 255, 0.82);
       backdrop-filter: blur(6px);
-      border: 1px solid rgba(203, 213, 225, 0.7);
+      border: 1px solid rgba(203, 213, 225, 0.75);
       color: #475569;
-      pointer-events: none;
       z-index: 40;
       letter-spacing: 0.2px;
       box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    body.theme-dark .watermark {
-      background: rgba(15, 23, 42, 0.8);
+    body.theme-dark .bottom-bar-pill {
+      background: rgba(15, 23, 42, 0.85);
       border-color: rgba(51, 65, 85, 0.8);
       color: #94a3b8;
     }
@@ -123,7 +125,7 @@
         </div>
       </div>
 
-      <!-- Tombol Pindah Halaman & Theme Toggle -->
+      <!-- Tombol Pindah Halaman & Theme Toggle (Tanpa Tombol Pengaturan Terbuka) -->
       <nav class="nav-pill flex bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 items-center">
         <button id="tab-input" onclick="switchPage('input')"
           class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-blue-600 shadow-xs">
@@ -138,10 +140,6 @@
           class="ml-1 px-2.5 py-2 rounded-lg text-slate-600 hover:bg-white/70 transition-all text-sm">
           🌙
         </button>
-        <button onclick="toggleConfigModal()" title="Pengaturan URL Spreadsheet"
-          class="px-2.5 py-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white/70 transition-all">
-          ⚙️
-        </button>
       </nav>
     </div>
   </header>
@@ -149,22 +147,16 @@
   <!-- Main Content -->
   <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
 
-    <!-- Status Koneksi Bar -->
-    <div id="connection-banner" class="mb-5 px-4 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between bg-amber-50/90 backdrop-blur-xs border border-amber-200 text-amber-800 shadow-xs">
-      <span id="connection-text">⚠️ URL Google Apps Script belum diatur. Data hanya tersimpan di browser ini.</span>
-      <button onclick="toggleConfigModal()" class="underline font-semibold hover:text-amber-950">Atur URL</button>
-    </div>
-
     <!-- ==================== PAGE 1: FORM INPUT DATA ==================== -->
     <section id="page-input" class="fade-in">
       <div class="glass-card rounded-2xl p-6 sm:p-7">
         <div class="mb-5 pb-4 border-b border-slate-200/70 flex items-center justify-between">
           <div>
             <h2 class="text-title text-lg font-bold text-slate-900">Form Input Hasil Remarks</h2>
-            <p class="text-sub text-xs text-slate-500 mt-0.5">Data otomatis dikirim ke Google Spreadsheet sesuai nama header dan tersimpan di cache pencarian.</p>
+            <p class="text-sub text-xs text-slate-500 mt-0.5">Data otomatis tersinkron ke database & tersedia di halaman pencarian.</p>
           </div>
-          <span class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/80">
-            <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span> Live Sync
+          <span class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Auto-Sync
           </span>
         </div>
 
@@ -242,16 +234,15 @@
     <!-- ==================== PAGE 2: PENCARIAN DATA BY NIK ==================== -->
     <section id="page-search" class="hidden fade-in">
       <div class="glass-card rounded-2xl p-6 mb-5">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h2 class="text-title text-lg font-bold text-slate-900">Pencarian Data Berdasarkan NIK KTP</h2>
-            <p class="text-sub text-xs text-slate-500 mt-0.5">Menampilkan hasil dari database bersama & penyimpanan lokal.</p>
+            <p class="text-sub text-xs text-slate-500 mt-0.5">Data diperbarui secara otomatis dari server.</p>
           </div>
-          <button onclick="syncFromSpreadsheet(true)" id="btn-sync"
-            class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 text-xs font-semibold transition flex items-center gap-1.5">
-            <span id="sync-icon">🔄</span>
-            <span>Sinkronkan Data Terbaru</span>
-          </button>
+          <span class="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[11px] font-semibold">
+            <span id="sync-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            <span id="sync-badge-text">Sinkron Otomatis</span>
+          </span>
         </div>
 
         <!-- Search Input Box -->
@@ -279,12 +270,35 @@
 
   </main>
 
-  <!-- Modal Pengaturan URL GAS -->
+  <!-- Modal 1: Verifikasi Password Admin (Kecil & Terproteksi) -->
+  <div id="admin-auth-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white text-slate-800 rounded-2xl max-w-xs w-full p-5 shadow-2xl border border-slate-200">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">🔒 Akses Admin</h3>
+        <button onclick="closeAdminModals()" class="text-slate-400 hover:text-slate-700 text-sm font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-500 mb-3">Masukkan PIN / Password Admin untuk membuka pengaturan koneksi.</p>
+      <form onsubmit="verifyAdminPassword(event)">
+        <input type="password" id="admin-pass-input" placeholder="Password Admin..." required
+          class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <div class="flex justify-end gap-2">
+          <button type="button" onclick="closeAdminModals()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+            Batal
+          </button>
+          <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
+            Masuk
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Pengaturan URL GAS (Hanya muncul setelah password benar) -->
   <div id="config-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
     <div class="bg-white text-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-base font-bold text-slate-900">Konfigurasi Koneksi Google Spreadsheet</h3>
-        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+        <button onclick="closeAdminModals()" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
       </div>
       <p class="text-xs text-slate-600 mb-3 leading-relaxed">
         Tempel <strong>Web App URL</strong> dari Google Apps Script Anda. Pastikan header di Baris 1 Spreadsheet bernama:<br>
@@ -294,13 +308,18 @@
       </p>
       <input type="url" id="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec"
         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-      <div class="flex justify-end gap-2">
-        <button onclick="toggleConfigModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-          Batal
+      <div class="flex justify-between items-center gap-2">
+        <button type="button" onclick="resetGasUrlToDefault()" class="text-[11px] text-slate-400 hover:text-red-600 underline">
+          Reset ke Default
         </button>
-        <button onclick="saveGasUrl()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
-          Simpan Koneksi
-        </button>
+        <div class="flex gap-2">
+          <button onclick="closeAdminModals()" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+            Batal
+          </button>
+          <button onclick="saveGasUrl()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
+            Simpan Koneksi
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -308,13 +327,27 @@
   <!-- Toast Notification -->
   <div id="toast" class="hidden fixed bottom-12 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all"></div>
 
-  <!-- Watermark -->
-  <div class="watermark">powered by Asy-Syam Sakti</div>
+  <!-- Watermark + Tombol Mini Admin Terproteksi -->
+  <div class="bottom-bar-pill">
+    <button onclick="openAdminGate()" title="Admin Only"
+      class="flex items-center gap-1 text-[10px] opacity-75 hover:opacity-100 transition cursor-pointer focus:outline-none">
+      <span id="mini-status-dot" class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
+      <span>🔒</span>
+    </button>
+    <span class="opacity-40">|</span>
+    <span>powered by Asy-Syam Sakti</span>
+  </div>
 
   <script>
     // =========================================================================
-    // TEMPEL URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI:
+    // 1. TEMPEL URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI:
     const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwmSUmmeB4Pw_hzDbQmaZaEowfIHzncSwwtSBSVn-g7SPTdu_91LNoJTnNQIUJ36E-Q/exec";
+
+    // 2. ATUR PASSWORD ADMIN UNTUK MEMBUKA PENGATURAN KONEKSI:
+    const ADMIN_PASSWORD = "sehati1234";
+
+    // 3. INTERVAL REFRESH OTOMATIS KE SPREADSHEET (dalam milidetik, 15000 = 15 detik):
+    const AUTO_SYNC_INTERVAL_MS = 15000;
     // =========================================================================
 
     const STORAGE_KEY_DATA = "remarks_anggota_records_v1";
@@ -323,9 +356,9 @@
     const STORAGE_KEY_THEME = "remarks_anggota_theme_v1";
 
     let allRecords = [];
+    let isSyncing = false;
 
     document.addEventListener("DOMContentLoaded", () => {
-      // Terapkan tema tersimpan
       const savedTheme = localStorage.getItem(STORAGE_KEY_THEME) || "light";
       applyTheme(savedTheme);
 
@@ -343,11 +376,26 @@
         }
       }
       updateBadgeCount();
-      updateConnectionBanner();
+      updateMiniStatusIndicator();
 
+      // Sinkronisasi otomatis saat halaman pertama kali dibuka
       if (getGasUrl()) {
-        syncFromSpreadsheet(false);
+        syncFromSpreadsheet(true);
       }
+
+      // Refresh otomatis berkala setiap 15 detik
+      setInterval(() => {
+        if (getGasUrl() && !document.hidden) {
+          syncFromSpreadsheet(true);
+        }
+      }, AUTO_SYNC_INTERVAL_MS);
+
+      // Refresh otomatis saat tab browser kembali aktif dibuka
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && getGasUrl()) {
+          syncFromSpreadsheet(true);
+        }
+      });
     });
 
     function toggleTheme() {
@@ -374,32 +422,57 @@
       return localStorage.getItem(STORAGE_KEY_URL) || DEFAULT_GAS_URL.trim();
     }
 
-    function updateConnectionBanner() {
+    function updateMiniStatusIndicator() {
       const url = getGasUrl();
-      const banner = document.getElementById("connection-banner");
-      const text = document.getElementById("connection-text");
+      const dot = document.getElementById("mini-status-dot");
       if (url) {
-        banner.className = "mb-5 px-4 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between bg-emerald-50/90 backdrop-blur-xs border border-emerald-200 text-emerald-800 shadow-xs";
-        text.textContent = "✅ Terhubung ke Google Spreadsheet (Data otomatis tersinkron untuk semua pengguna).";
+        dot.className = "w-2 h-2 rounded-full bg-emerald-500 inline-block";
       } else {
-        banner.className = "mb-5 px-4 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between bg-amber-50/90 backdrop-blur-xs border border-amber-200 text-amber-800 shadow-xs";
-        text.textContent = "⚠️ URL Google Apps Script belum diatur. Data saat ini hanya tersimpan di lokal browser.";
+        dot.className = "w-2 h-2 rounded-full bg-amber-400 inline-block";
       }
     }
 
-    function toggleConfigModal() {
-      const modal = document.getElementById("config-modal");
-      document.getElementById("gas-url-input").value = getGasUrl();
-      modal.classList.toggle("hidden");
+    // Gerbang Password Khusus Admin
+    function openAdminGate() {
+      document.getElementById("admin-pass-input").value = "";
+      document.getElementById("admin-auth-modal").classList.remove("hidden");
+      setTimeout(() => document.getElementById("admin-pass-input").focus(), 50);
+    }
+
+    function verifyAdminPassword(e) {
+      e.preventDefault();
+      const inputPass = document.getElementById("admin-pass-input").value;
+      if (inputPass === ADMIN_PASSWORD) {
+        document.getElementById("admin-auth-modal").classList.add("hidden");
+        document.getElementById("gas-url-input").value = getGasUrl();
+        document.getElementById("config-modal").classList.remove("hidden");
+      } else {
+        showToast("Password Admin salah!", "error");
+        document.getElementById("admin-pass-input").value = "";
+        document.getElementById("admin-pass-input").focus();
+      }
+    }
+
+    function closeAdminModals() {
+      document.getElementById("admin-auth-modal").classList.add("hidden");
+      document.getElementById("config-modal").classList.add("hidden");
     }
 
     function saveGasUrl() {
       const url = document.getElementById("gas-url-input").value.trim();
       localStorage.setItem(STORAGE_KEY_URL, url);
-      updateConnectionBanner();
-      toggleConfigModal();
+      updateMiniStatusIndicator();
+      closeAdminModals();
       showToast("URL Spreadsheet berhasil disimpan!", "success");
-      if (url) syncFromSpreadsheet(true);
+      if (url) syncFromSpreadsheet(false);
+    }
+
+    function resetGasUrlToDefault() {
+      localStorage.removeItem(STORAGE_KEY_URL);
+      document.getElementById("gas-url-input").value = DEFAULT_GAS_URL.trim();
+      updateMiniStatusIndicator();
+      showToast("URL dikembalikan ke pengaturan default kode.", "success");
+      if (getGasUrl()) syncFromSpreadsheet(true);
     }
 
     function switchPage(page) {
@@ -419,10 +492,9 @@
         tabSearch.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-blue-600 shadow-xs flex items-center justify-center gap-1.5";
         tabInput.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-500 hover:text-blue-600";
 
+        filterDataByNik();
         if (getGasUrl()) {
-          syncFromSpreadsheet(false);
-        } else {
-          filterDataByNik();
+          syncFromSpreadsheet(true);
         }
       }
     }
@@ -481,7 +553,9 @@
           });
           const result = await response.json();
           if (result.status === "success") {
-            showToast("Data berhasil disimpan ke Spreadsheet & Lokal!", "success");
+            showToast("Data berhasil disimpan ke Spreadsheet!", "success");
+            // Tarik ulang otomatis agar sinkron dengan baris terbaru di Spreadsheet
+            syncFromSpreadsheet(true);
           } else {
             showToast("Tersimpan lokal, namun gagal ke Sheet: " + result.message, "error");
           }
@@ -515,15 +589,16 @@
       document.getElementById("nik-counter").className = "text-xs font-medium text-slate-400";
     }
 
-    async function syncFromSpreadsheet(manualClick = false) {
+    // Sinkronisasi Otomatis ke Spreadsheet
+    async function syncFromSpreadsheet(silent = true) {
       const gasUrl = getGasUrl();
-      if (!gasUrl) {
-        if (manualClick) showToast("Atur URL Google Apps Script terlebih dahulu.", "error");
-        return;
-      }
+      if (!gasUrl || isSyncing) return;
 
-      const syncIcon = document.getElementById("sync-icon");
-      syncIcon.classList.add("animate-spin");
+      isSyncing = true;
+      const syncDot = document.getElementById("sync-dot");
+      const syncBadgeText = document.getElementById("sync-badge-text");
+      if (syncDot) syncDot.classList.add("animate-ping");
+      if (syncBadgeText) syncBadgeText.textContent = "Menyinkronkan...";
 
       try {
         const res = await fetch(gasUrl);
@@ -533,23 +608,36 @@
           localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(allRecords));
           updateBadgeCount();
 
-          const timeNow = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-          document.getElementById("last-sync-time").textContent = `Tersinkron pukul ${timeNow}`;
+          const timeNow = new Date().toLocaleTimeString("id-ID", {
+            hour: "2-digit", minute: "2-digit", second: "2-digit"
+          });
+          const lastSyncEl = document.getElementById("last-sync-time");
+          if (lastSyncEl) lastSyncEl.textContent = `Update: ${timeNow}`;
 
-          if (manualClick) showToast(`Berhasil memuat ${allRecords.length} data dari Spreadsheet.`, "success");
-          filterDataByNik();
+          if (!silent) {
+            showToast(`Berhasil memuat ${allRecords.length} data dari Spreadsheet.`, "success");
+          }
+
+          // Perbarui tampilan hasil pencarian secara live jika halaman pencarian sedang terbuka
+          if (!document.getElementById("page-search").classList.contains("hidden")) {
+            filterDataByNik();
+          }
         }
       } catch (err) {
-        if (manualClick) showToast("Gagal menyinkronkan data dari Spreadsheet.", "error");
+        if (!silent) showToast("Gagal menyinkronkan data dari Spreadsheet.", "error");
       } finally {
-        syncIcon.classList.remove("animate-spin");
+        isSyncing = false;
+        if (syncDot) syncDot.classList.remove("animate-ping");
+        if (syncBadgeText) syncBadgeText.textContent = "Sinkron Otomatis";
       }
     }
 
     function filterDataByNik() {
       const inputEl = document.getElementById("search-nik-input");
       const keyword = inputEl.value.replace(/\D/g, "");
-      inputEl.value = keyword;
+      if (inputEl.value !== keyword) {
+        inputEl.value = keyword;
+      }
 
       const clearBtn = document.getElementById("btn-clear-search");
       const statusInfo = document.getElementById("search-status-info");
@@ -574,7 +662,7 @@
         container.innerHTML = `
           <div class="glass-card rounded-2xl p-8 text-center">
             <p class="text-title text-sm font-semibold text-slate-700">Data NIK KTP tidak ditemukan</p>
-            <p class="text-sub text-xs text-slate-500 mt-1">Pastikan nomor NIK KTP Anggota sudah benar atau klik "Sinkronkan Data Terbaru".</p>
+            <p class="text-sub text-xs text-slate-500 mt-1">Pastikan nomor NIK KTP Anggota sudah sesuai.</p>
           </div>
         `;
         return;

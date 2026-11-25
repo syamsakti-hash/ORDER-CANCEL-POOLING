@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistem Input & Cek Remarks Anggota</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.25s ease-in-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .watermark {
+      position: fixed;
+      bottom: 12px;
+      right: 16px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(71, 85, 105, 0.55);
+      pointer-events: none;
+      z-index: 40;
+      letter-spacing: 0.3px;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Navbar & Navigasi Halaman -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm">
+          RM
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-slate-900 leading-tight">Monitoring Remarks Anggota</h1>
+          <p class="text-xs text-slate-500">Input Identitas & Kendaraan Terintegrasi</p>
+        </div>
+      </div>
+
+      <!-- Tombol Pindah Halaman -->
+      <nav class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <button id="tab-input" onclick="switchPage('input')"
+          class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-blue-600 shadow-sm">
+          + Input Data
+        </button>
+        <button id="tab-search" onclick="switchPage('search')"
+          class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5">
+          <span>Cari NIK KTP</span>
+          <span id="badge-count" class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+        </button>
+        <button onclick="toggleConfigModal()" title="Pengaturan URL Spreadsheet"
+          class="ml-1 px-2.5 py-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 transition-all">
+          ⚙️
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
+
+    <!-- Status Koneksi Bar -->
+    <div id="connection-banner" class="mb-5 px-4 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between bg-amber-50 border border-amber-200 text-amber-800">
+      <span id="connection-text">⚠️ URL Google Apps Script belum diatur. Data hanya tersimpan di browser ini.</span>
+      <button onclick="toggleConfigModal()" class="underline font-semibold hover:text-amber-950">Atur URL</button>
+    </div>
+
+    <!-- ==================== PAGE 1: FORM INPUT DATA ==================== -->
+    <section id="page-input" class="fade-in">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div class="mb-5 pb-4 border-b border-slate-100">
+          <h2 class="text-lg font-bold text-slate-900">Form Input Hasil Remarks</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Data otomatis dikirim ke Google Spreadsheet sesuai nama header dan tersimpan di cache pencarian.</p>
+        </div>
+
+        <form id="remarks-form" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Nama Admin -->
+            <div>
+              <label for="nama-admin" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Nama Admin <span class="text-red-500">*</span>
+              </label>
+              <input type="text" id="nama-admin" required placeholder="Masukkan nama admin"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            </div>
+
+            <!-- Nama Anggota -->
+            <div>
+              <label for="nama-anggota" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Nama Anggota <span class="text-red-500">*</span>
+              </label>
+              <input type="text" id="nama-anggota" required placeholder="Masukkan nama lengkap anggota"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            </div>
+          </div>
+
+          <!-- NIK KTP Anggota -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label for="nik-ktp" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                NIK KTP Anggota <span class="text-red-500">*</span>
+              </label>
+              <span id="nik-counter" class="text-xs font-medium text-slate-400">0 / 16 digit</span>
+            </div>
+            <input type="text" id="nik-ktp" inputmode="numeric" maxlength="16" required
+              placeholder="Contoh: 3216012345670001"
+              oninput="handleNikInput(this)"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+          </div>
+
+          <!-- Hasil Remarks Identitas -->
+          <div>
+            <label for="remarks-identitas" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              Hasil Remarks Identitas <span class="text-red-500">*</span>
+            </label>
+            <textarea id="remarks-identitas" rows="3" required
+              placeholder="Tuliskan hasil pengecekan / remarks identitas (KTP, KK, Domisili, dll)..."
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"></textarea>
+          </div>
+
+          <!-- Hasil Remarks Kendaraan -->
+          <div>
+            <label for="remarks-kendaraan" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              Hasil Remarks Kendaraan <span class="text-red-500">*</span>
+            </label>
+            <textarea id="remarks-kendaraan" rows="3" required
+              placeholder="Tuliskan hasil pengecekan / remarks unit kendaraan (BPKB, STNK, Noka/Nosin, Kondisi, dll)..."
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"></textarea>
+          </div>
+
+          <!-- Tombol Submit -->
+          <div class="pt-2 flex flex-col sm:flex-row gap-3">
+            <button type="submit" id="btn-submit"
+              class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-5 rounded-xl text-sm shadow-sm transition flex items-center justify-center gap-2">
+              <span id="submit-spinner" class="hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span id="submit-text">Simpan & Kirim Data</span>
+            </button>
+            <button type="button" onclick="resetForm()"
+              class="px-5 py-3 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 font-medium text-sm transition">
+              Reset
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ==================== PAGE 2: PENCARIAN DATA BY NIK ==================== -->
+    <section id="page-search" class="hidden fade-in">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Pencarian Data Berdasarkan NIK KTP</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Menampilkan hasil dari database bersama & penyimpanan lokal.</p>
+          </div>
+          <button onclick="syncFromSpreadsheet(true)" id="btn-sync"
+            class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5">
+            <span id="sync-icon">🔄</span>
+            <span>Sinkronkan Data Terbaru</span>
+          </button>
+        </div>
+
+        <!-- Search Input Box -->
+        <div class="relative">
+          <input type="text" id="search-nik-input" inputmode="numeric" maxlength="16"
+            placeholder="Ketik 16 digit NIK KTP Anggota untuk mencari..."
+            oninput="filterDataByNik()"
+            class="w-full pl-10 pr-24 py-3 rounded-xl border border-slate-300 text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+          <span class="absolute left-3.5 top-3.5 text-slate-400">🔍</span>
+          <button onclick="clearSearch()" id="btn-clear-search"
+            class="hidden absolute right-2.5 top-2 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 rounded-lg">
+            Hapus
+          </button>
+        </div>
+
+        <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+          <span id="search-status-info">Masukkan NIK KTP Anggota di atas untuk melihat hasil remarks.</span>
+          <span id="last-sync-time"></span>
+        </div>
+      </div>
+
+      <!-- Hasil Pencarian Container -->
+      <div id="search-results-container" class="space-y-4"></div>
+    </section>
+
+  </main>
+
+  <!-- Modal Pengaturan URL GAS -->
+  <div id="config-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-base font-bold text-slate-900">Konfigurasi Koneksi Google Spreadsheet</h3>
+        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+        Tempel <strong>Web App URL</strong> dari Google Apps Script Anda. Pastikan header di Baris 1 Spreadsheet bernama:<br>
+        <code class="bg-slate-100 px-1.5 py-0.5 rounded text-blue-700 font-mono text-[11px]">
+          Timestamp | Nama Admin | Nama Anggota | NIK KTP Anggota | Hasil Remarks Identitas | Hasil Remarks Kendaraan
+        </code>
+      </p>
+      <input type="url" id="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec"
+        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <div class="flex justify-end gap-2">
+        <button onclick="toggleConfigModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+          Batal
+        </button>
+        <button onclick="saveGasUrl()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
+          Simpan Koneksi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all"></div>
+
+  <!-- Watermark -->
+  <div class="watermark">powered by Asy-Syam Sakti</div>
+
+  <script>
+    // =========================================================================
+    // TEMPEL URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI AGAR SEMUA USER
+    // YANG MEMBUKA LINK OTOMATIS TERHUBUNG KE SPREADSHEET YANG SAMA:
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwmSUmmeB4Pw_hzDbQmaZaEowfIHzncSwwtSBSVn-g7SPTdu_91LNoJTnNQIUJ36E-Q/exec"; 
+    // =========================================================================
+
+    const STORAGE_KEY_DATA = "remarks_anggota_records_v1";
+    const STORAGE_KEY_URL = "remarks_anggota_gas_url_v1";
+    const STORAGE_KEY_ADMIN = "remarks_anggota_last_admin_v1";
+
+    let allRecords = [];
+
+    // Inisialisasi saat halaman dibuka
+    document.addEventListener("DOMContentLoaded", () => {
+      // Load nama admin terakhir agar tidak perlu ketik ulang terus-menerus
+      const savedAdmin = localStorage.getItem(STORAGE_KEY_ADMIN);
+      if (savedAdmin) {
+        document.getElementById("nama-admin").value = savedAdmin;
+      }
+
+      // Load data lokal terlebih dahulu agar instan
+      const localData = localStorage.getItem(STORAGE_KEY_DATA);
+      if (localData) {
+        try {
+          allRecords = JSON.parse(localData);
+        } catch (e) {
+          allRecords = [];
+        }
+      }
+      updateBadgeCount();
+      updateConnectionBanner();
+
+      // Jika URL GAS tersedia, langsung tarik data terbaru dari Spreadsheet
+      if (getGasUrl()) {
+        syncFromSpreadsheet(false);
+      }
+    });
+
+    function getGasUrl() {
+      return localStorage.getItem(STORAGE_KEY_URL) || DEFAULT_GAS_URL.trim();
+    }
+
+    function updateConnectionBanner() {
+      const url = getGasUrl();
+      const banner = document.getElementById("connection-banner");
+      const text = document.getElementById("connection-text");
+      if (url) {
+        banner.className = "mb-5 px-4 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-800";
+        text.textContent = "✅ Terhubung ke Google Spreadsheet (Data otomatis tersinkron untuk semua pengguna).";
+      } else {
+        banner.className = "mb-5 px-4 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between bg-amber-50 border border-amber-200 text-amber-800";
+        text.textContent = "⚠️ URL Google Apps Script belum diatur. Data saat ini hanya tersimpan di lokal browser.";
+      }
+    }
+
+    function toggleConfigModal() {
+      const modal = document.getElementById("config-modal");
+      document.getElementById("gas-url-input").value = getGasUrl();
+      modal.classList.toggle("hidden");
+    }
+
+    function saveGasUrl() {
+      const url = document.getElementById("gas-url-input").value.trim();
+      localStorage.setItem(STORAGE_KEY_URL, url);
+      updateConnectionBanner();
+      toggleConfigModal();
+      showToast("URL Spreadsheet berhasil disimpan!", "success");
+      if (url) syncFromSpreadsheet(true);
+    }
+
+    // Navigasi antar halaman (Input vs Pencarian)
+    function switchPage(page) {
+      const pageInput = document.getElementById("page-input");
+      const pageSearch = document.getElementById("page-search");
+      const tabInput = document.getElementById("tab-input");
+      const tabSearch = document.getElementById("tab-search");
+
+      if (page === "input") {
+        pageInput.classList.remove("hidden");
+        pageSearch.classList.add("hidden");
+        tabInput.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-blue-600 shadow-sm";
+        tabSearch.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5";
+      } else {
+        pageInput.classList.add("hidden");
+        pageSearch.classList.remove("hidden");
+        tabSearch.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-blue-600 shadow-sm flex items-center justify-center gap-1.5";
+        tabInput.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-600 hover:text-slate-900";
+        
+        // Sinkronisasi otomatis setiap buka halaman pencarian jika terhubung ke Spreadsheet
+        if (getGasUrl()) {
+          syncFromSpreadsheet(false);
+        } else {
+          filterDataByNik();
+        }
+      }
+    }
+
+    // Validasi input angka saja untuk NIK KTP
+    function handleNikInput(el) {
+      el.value = el.value.replace(/\D/g, "").slice(0, 16);
+      const counter = document.getElementById("nik-counter");
+      counter.textContent = `${el.value.length} / 16 digit`;
+      counter.className = el.value.length === 16
+        ? "text-xs font-semibold text-emerald-600"
+        : "text-xs font-medium text-slate-400";
+    }
+
+    // Submit Form
+    document.getElementById("remarks-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const namaAdmin = document.getElementById("nama-admin").value.trim();
+      const namaAnggota = document.getElementById("nama-anggota").value.trim();
+      const nikKtp = document.getElementById("nik-ktp").value.trim();
+      const remarksIdentitas = document.getElementById("remarks-identitas").value.trim();
+      const remarksKendaraan = document.getElementById("remarks-kendaraan").value.trim();
+
+      if (nikKtp.length < 16) {
+        const lanjut = confirm(`NIK KTP baru terisi ${nikKtp.length} digit (standar 16 digit). Tetap lanjutkan simpan?`);
+        if (!lanjut) return;
+      }
+
+      const now = new Date().toLocaleString("id-ID", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+      });
+
+      // Key disesuaikan persis dengan Header Spreadsheet
+      const record = {
+        "Timestamp": now,
+        "Nama Admin": namaAdmin,
+        "Nama Anggota": namaAnggota,
+        "NIK KTP Anggota": nikKtp,
+        "Hasil Remarks Identitas": remarksIdentitas,
+        "Hasil Remarks Kendaraan": remarksKendaraan
+      };
+
+      setSubmittingState(true);
+      localStorage.setItem(STORAGE_KEY_ADMIN, namaAdmin);
+
+      // 1. Simpan ke penyimpanan lokal terlebih dahulu
+      allRecords.unshift(record);
+      localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(allRecords));
+      updateBadgeCount();
+
+      // 2. Kirim ke Google Spreadsheet jika URL terkonfigurasi
+      const gasUrl = getGasUrl();
+      if (gasUrl) {
+        try {
+          const response = await fetch(gasUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(record)
+          });
+          const result = await response.json();
+          if (result.status === "success") {
+            showToast("Data berhasil disimpan ke Spreadsheet & Lokal!", "success");
+          } else {
+            showToast("Tersimpan lokal, namun gagal ke Sheet: " + result.message, "error");
+          }
+        } catch (err) {
+          showToast("Tersimpan lokal. Gagal terhubung ke Spreadsheet.", "error");
+        }
+      } else {
+        showToast("Data tersimpan di penyimpanan lokal browser!", "success");
+      }
+
+      setSubmittingState(false);
+      resetForm(true);
+    });
+
+    function setSubmittingState(isLoading) {
+      const btn = document.getElementById("btn-submit");
+      const spinner = document.getElementById("submit-spinner");
+      const text = document.getElementById("submit-text");
+      btn.disabled = isLoading;
+      spinner.classList.toggle("hidden", !isLoading);
+      text.textContent = isLoading ? "Menyimpan..." : "Simpan & Kirim Data";
+    }
+
+    function resetForm(keepAdmin = false) {
+      const currentAdmin = document.getElementById("nama-admin").value;
+      document.getElementById("remarks-form").reset();
+      if (keepAdmin) {
+        document.getElementById("nama-admin").value = currentAdmin;
+      }
+      document.getElementById("nik-counter").textContent = "0 / 16 digit";
+      document.getElementById("nik-counter").className = "text-xs font-medium text-slate-400";
+    }
+
+    // Tarik data terbaru dari Spreadsheet agar semua pengakses link mendapat data terbaru
+    async function syncFromSpreadsheet(manualClick = false) {
+      const gasUrl = getGasUrl();
+      if (!gasUrl) {
+        if (manualClick) showToast("Atur URL Google Apps Script terlebih dahulu.", "error");
+        return;
+      }
+
+      const syncIcon = document.getElementById("sync-icon");
+      syncIcon.classList.add("animate-spin");
+
+      try {
+        const res = await fetch(gasUrl);
+        const json = await res.json();
+        if (json.status === "success" && Array.isArray(json.data)) {
+          allRecords = json.data;
+          localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(allRecords));
+          updateBadgeCount();
+
+          const timeNow = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+          document.getElementById("last-sync-time").textContent = `Tersinkron pukul ${timeNow}`;
+
+          if (manualClick) showToast(`Berhasil memuat ${allRecords.length} data dari Spreadsheet.`, "success");
+          filterDataByNik();
+        }
+      } catch (err) {
+        if (manualClick) showToast("Gagal menyinkronkan data dari Spreadsheet.", "error");
+      } finally {
+        syncIcon.classList.remove("animate-spin");
+      }
+    }
+
+    // Pencarian berdasarkan NIK KTP Anggota
+    function filterDataByNik() {
+      const inputEl = document.getElementById("search-nik-input");
+      const keyword = inputEl.value.replace(/\D/g, "");
+      inputEl.value = keyword;
+
+      const clearBtn = document.getElementById("btn-clear-search");
+      const statusInfo = document.getElementById("search-status-info");
+      const container = document.getElementById("search-results-container");
+
+      clearBtn.classList.toggle("hidden", keyword.length === 0);
+
+      if (keyword.length === 0) {
+        statusInfo.textContent = `Total ${allRecords.length} data tersedia. Ketik NIK KTP Anggota untuk mencari.`;
+        container.innerHTML = "";
+        return;
+      }
+
+      // Cari kecocokan berdasarkan kolom NIK KTP Anggota (mendukung pencarian sebagian atau 16 digit penuh)
+      const matches = allRecords.filter(item => {
+        const nikValue = (item["NIK KTP Anggota"] || item["nik ktp anggota"] || "").toString().trim();
+        return nikValue.includes(keyword);
+      });
+
+      statusInfo.innerHTML = `Ditemukan <strong>${matches.length}</strong> data untuk NIK KTP mengandung <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-blue-700">${keyword}</code>`;
+
+      if (matches.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+            <p class="text-sm font-semibold text-slate-700">Data NIK KTP tidak ditemukan</p>
+            <p class="text-xs text-slate-500 mt-1">Pastikan nomor NIK KTP Anggota sudah benar atau klik "Sinkronkan Data Terbaru".</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = matches.map((row, idx) => {
+        const nik = escapeHtml(row["NIK KTP Anggota"] || "-");
+        const nama = escapeHtml(row["Nama Anggota"] || "-");
+        const admin = escapeHtml(row["Nama Admin"] || "-");
+        const time = escapeHtml(row["Timestamp"] || "-");
+        const remId = escapeHtml(row["Hasil Remarks Identitas"] || "-");
+        const remKend = escapeHtml(row["Hasil Remarks Kendaraan"] || "-");
+
+        return `
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 fade-in">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100">
+              <div>
+                <span class="inline-block bg-blue-50 text-blue-700 font-mono text-xs font-bold px-2.5 py-1 rounded-lg border border-blue-200">
+                  NIK: ${nik}
+                </span>
+                <h3 class="text-base font-bold text-slate-900 mt-1.5">${nama}</h3>
+              </div>
+              <div class="text-left sm:text-right text-xs text-slate-500">
+                <div>Admin: <strong class="text-slate-700">${admin}</strong></div>
+                <div>Waktu: ${time}</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/70">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Hasil Remarks Identitas</div>
+                <p class="text-sm text-slate-800 whitespace-pre-line leading-relaxed">${remId}</p>
+              </div>
+              <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/70">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Hasil Remarks Kendaraan</div>
+                <p class="text-sm text-slate-800 whitespace-pre-line leading-relaxed">${remKend}</p>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex justify-end">
+              <button onclick="copyRemarkText(${idx}, '${nik}')"
+                class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                📋 Salin Hasil Remarks
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function copyRemarkText(index, nikKeyword) {
+      const matches = allRecords.filter(item =>
+        (item["NIK KTP Anggota"] || "").toString().includes(nikKeyword)
+      );
+      const item = matches[index];
+      if (!item) return;
+
+      const text = `Nama Anggota: ${item["Nama Anggota"]}\nNIK KTP: ${item["NIK KTP Anggota"]}\nRemarks Identitas: ${item["Hasil Remarks Identitas"]}\nRemarks Kendaraan: ${item["Hasil Remarks Kendaraan"]}\nAdmin: ${item["Nama Admin"]}`;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("Hasil remarks berhasil disalin!", "success");
+      });
+    }
+
+    function clearSearch() {
+      document.getElementById("search-nik-input").value = "";
+      filterDataByNik();
+    }
+
+    function updateBadgeCount() {
+      document.getElementById("badge-count").textContent = allRecords.length;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showToast(msg, type = "success") {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all ${
+        type === "success" ? "bg-slate-900" : "bg-red-600"
+      }`;
+      toast.classList.remove("hidden");
+      setTimeout(() => toast.classList.add("hidden"), 3200);
+    }
+  </script>
+</body>
+</html>
